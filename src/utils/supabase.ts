@@ -1,10 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Default to dummy values during build to prevent crash, but warn user
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-url.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
 
-if (!supabaseUrl && typeof window === 'undefined') {
-  console.warn('⚠️ NEXT_PUBLIC_SUPABASE_URL is missing. Please add it to Vercel Environment Variables.');
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL && typeof window === 'undefined') {
+  console.warn('⚠️ NEXT_PUBLIC_SUPABASE_URL is missing. Please add it to Vercel Environment Variables to enable database features.');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
