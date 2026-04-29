@@ -20,6 +20,12 @@ CREATE TABLE IF NOT EXISTS shops (
   name TEXT NOT NULL,
   address TEXT,
   phone TEXT,
+  upi_id TEXT,
+  gstin TEXT,
+  logo_url TEXT,
+  notify_whatsapp BOOLEAN DEFAULT true,
+  notify_email BOOLEAN DEFAULT true,
+  notify_push BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

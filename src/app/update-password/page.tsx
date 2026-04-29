@@ -42,7 +42,7 @@ export default function UpdatePasswordPage() {
 
         <form onSubmit={handleUpdate} className="auth-form">
           {error && <div className="auth-error">⚠️ {error}</div>}
-          {success && <div className="auth-success" style={{ color: 'var(--success)', padding: '12px', background: 'rgba(0,200,0,0.1)', borderRadius: '8px', marginBottom: '16px' }}>✅ Password updated! Redirecting to login...</div>}
+          {success && <div className="auth-success-box">✅ Password updated! Redirecting to login...</div>}
 
           <div className="form-group">
             <label htmlFor="new-password">New Password</label>
@@ -62,6 +62,17 @@ export default function UpdatePasswordPage() {
           </button>
         </form>
       </div>
+
+      <style jsx>{`
+        .auth-success-box {
+          color: var(--success);
+          padding: 12px;
+          background: rgba(0, 200, 0, 0.1);
+          border-radius: 8px;
+          margin-bottom: 16px;
+          font-size: 0.875rem;
+        }
+      `}</style>
     </div>
   );
 }

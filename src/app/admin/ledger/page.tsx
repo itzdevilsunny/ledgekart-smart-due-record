@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -10,7 +10,7 @@ type TxnWithCustomer = LedgerEntry & {
   customers: { name: string; phone: string } | null;
 };
 
-export default function LedgerPage() {
+function LedgerContent() {
   const { shop, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,7 +27,7 @@ export default function LedgerPage() {
     
     if (view === 'history') {
       const { data } = await getRecentTransactions(shop.id, 100);
-      const formatted = (data as any[] || []).map((txn: any) => ({
+      const formatted = (data as unknown as (LedgerEntry & { customers: { name: string; phone: string } | { name: string; phone: string }[] })[] || []).map(txn => ({
         ...txn,
         customers: Array.isArray(txn.customers) ? txn.customers[0] : txn.customers
       }));
@@ -68,6 +68,27 @@ export default function LedgerPage() {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const handleExportCSV = () => {
+    let csvContent = "";
+    if (view === 'due') {
+      csvContent = "Customer Name,Phone,Balance Due,Credit Limit\n" + 
+        filteredCustomers.map(c => `"${c.name}","${c.phone}",${c.balance_due},${c.credit_limit}`).join("\n");
+    } else {
+      csvContent = "Date,Customer,Description,Type,Amount\n" + 
+        filteredEntries.map(e => `"${new Date(e.created_at).toLocaleDateString()}","${e.customers?.name || 'Unknown'}","${e.description || ''}","${e.entry_type}",${e.amount}`).join("\n");
+    }
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `ledger_${view}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const filteredEntries = entries.filter(e => 
     e.customers?.name.toLowerCase().includes(search.toLowerCase()) || e.description?.toLowerCase().includes(search.toLowerCase())
   );
@@ -87,7 +108,7 @@ export default function LedgerPage() {
           </p>
         </div>
         <div className="flex-gap-sm">
-          <button className="btn-outline">📥 Export PDF</button>
+          <button onClick={handleExportCSV} className="btn-outline">📥 Export CSV</button>
           <Link href="/admin/ledger/new" className="btn-primary">+ Add Entry</Link>
         </div>
       </div>
@@ -144,7 +165,7 @@ export default function LedgerPage() {
                         <div className="progress-bar-bg">
                           <div 
                             className={`progress-bar-fill ${barColor}`} 
-                            style={{ width: `${usagePercent}%` } as React.CSSProperties} 
+                            style={{ width: `${usagePercent}%` }}
                           />
                         </div>
                       </td>
@@ -206,14 +227,15 @@ export default function LedgerPage() {
         </div>
       </div>
 
-      <style jsx>{`
-        .ledger-controls { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px; }
-        .ledger-search-box { flex: 1; display: flex; justify-content: flex-end; }
-        .full-width { max-width: 300px; flex: 1; }
-        .usage-cell { min-width: 150px; }
-        .usage-info { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
-        .usage-limit { opacity: 0.6; }
-      `}</style>
+
     </div>
+  );
+}
+
+export default function LedgerPage() {
+  return (
+    <Suspense fallback={<div className="dash-loading"><div className="spinner" /></div>}>
+      <LedgerContent />
+    </Suspense>
   );
 }

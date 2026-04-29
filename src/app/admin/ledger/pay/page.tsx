@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { addPayment, getCustomers, CustomerBalance } from '@/utils/supabase';
+import { sendNotification, NotificationTemplates } from '@/utils/notifications';
 
 function PaymentForm() {
   const router = useRouter();
@@ -44,6 +45,21 @@ function PaymentForm() {
       setError(err.message);
       setLoading(false);
       return;
+    }
+
+
+    // Send notification if customer has email
+    if (selectedCustomer && selectedCustomer.email) {
+      const template = NotificationTemplates.payment(
+        shop.name || 'LedgerKart',
+        selectedCustomer.name,
+        Number(amount)
+      );
+      sendNotification({
+        to: selectedCustomer.email,
+        subject: template.subject,
+        html: template.html
+      }).catch(e => console.error('Failed to send payment notification:', e));
     }
 
     router.push(`/admin/customers/${customerId}`);

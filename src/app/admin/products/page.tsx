@@ -24,7 +24,7 @@ export default function ProductsPage() {
     if (!authLoading && !shop) {
       router.push('/register');
     } else if (shop) {
-      load();
+      Promise.resolve().then(() => load());
     }
   }, [shop, authLoading, router, load]);
 
@@ -100,11 +100,7 @@ export default function ProductsPage() {
         </div>
       )}
 
-      <style jsx>{`
-        .search-bar-container { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px; }
-        .search-box { flex: 1; min-width: 300px; }
-        .prod-placeholder-icon { font-size: 64px; }
-      `}</style>
+
     </div>
   );
 }

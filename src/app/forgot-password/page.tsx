@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 
-export default function ForgotPasswordPage() {
+
+function OTPLoginForm() {
+
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState(1); // 1: Email, 2: OTP
@@ -28,8 +30,9 @@ export default function ForgotPasswordPage() {
       
       setStep(2);
       setMessage(`A 6-digit code has been sent to ${email}`);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to send OTP';
+      setError(msg);
     }
     setLoading(false);
   };
@@ -49,10 +52,11 @@ export default function ForgotPasswordPage() {
 
       if (data.error) throw new Error(data.error);
 
-      // Redirect to the magic link which logs them in and lets them update password
+      // Redirect to the magic link which logs them in
       window.location.href = data.redirectUrl;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to verify OTP';
+      setError(msg);
     }
     setLoading(false);
   };
@@ -65,10 +69,10 @@ export default function ForgotPasswordPage() {
           LedgerKart
         </Link>
 
-        <h1 className="auth-title">Reset Password</h1>
+        <h1 className="auth-title">OTP Login / Reset</h1>
         <p className="auth-sub">
           {step === 1 
-            ? 'Enter your email and we\'ll send you a 6-digit OTP code.' 
+            ? 'Enter your email to receive a secure 6-digit login code.' 
             : `Enter the 6-digit code sent to ${email}`}
         </p>
 
@@ -95,18 +99,18 @@ export default function ForgotPasswordPage() {
         ) : (
           <form onSubmit={handleVerifyOTP} className="auth-form">
             {error && <div className="auth-error">⚠️ {error}</div>}
-            {message && <div className="auth-success" style={{ color: 'var(--success)', marginBottom: '16px', fontSize: '0.875rem' }}>✅ {message}</div>}
+            {message && <div className="auth-success-msg">✅ {message}</div>}
 
             <div className="form-group">
               <label htmlFor="otp-code">6-Digit Code</label>
               <input
                 id="otp-code"
+                className="otp-input"
                 type="text"
                 maxLength={6}
                 placeholder="000000"
                 value={otp}
                 onChange={e => setOtp(e.target.value)}
-                style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '8px' }}
                 required
               />
             </div>
@@ -127,9 +131,30 @@ export default function ForgotPasswordPage() {
         )}
 
         <p className="auth-switch">
-          Remember your password? <Link href="/login">Back to Login</Link>
+          Prefer password? <Link href="/login">Back to Login</Link>
         </p>
       </div>
+
+      <style jsx>{`
+        .auth-success-msg {
+          color: var(--success);
+          margin-bottom: 16px;
+          font-size: 0.875rem;
+        }
+        .otp-input {
+          text-align: center;
+          font-size: 24px;
+          letter-spacing: 8px;
+        }
+        .mt-12 { margin-top: 12px; }
+      `}</style>
     </div>
+  );
+}
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <OTPLoginForm />
+    </Suspense>
   );
 }

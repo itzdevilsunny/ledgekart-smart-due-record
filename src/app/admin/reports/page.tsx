@@ -1,35 +1,32 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { getDashboardStats, getCustomers, CustomerBalance } from '@/utils/supabase';
+import { getDashboardStats, getCustomers, CustomerBalance, DashboardStats } from '@/utils/supabase';
 
 export default function ReportsPage() {
   const { shop, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [customers, setCustomers] = useState<CustomerBalance[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadData = useCallback(async () => {
-    if (!shop) return;
-    const [statsRes, custRes] = await Promise.all([
-      getDashboardStats(shop.id),
-      getCustomers(shop.id)
-    ]);
-    setStats(statsRes);
-    setCustomers(custRes.data ?? []);
-    setLoading(false);
-  }, [shop]);
-
   useEffect(() => {
-    if (!authLoading && !shop) {
+    if (authLoading) return;
+    if (!shop) {
       router.push('/register');
-    } else if (shop) {
-      loadData();
+    } else {
+      Promise.all([
+        getDashboardStats(shop.id),
+        getCustomers(shop.id)
+      ]).then(([statsRes, custRes]) => {
+        setStats(statsRes);
+        setCustomers(custRes.data ?? []);
+        setLoading(false);
+      });
     }
-  }, [shop, authLoading, router, loadData]);
+  }, [shop, authLoading, router]);
 
   const fmt = (val: number) => 
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
@@ -48,7 +45,7 @@ export default function ReportsPage() {
         <div className="flex-gap-sm">
           <div className="date-picker-placeholder">
             <span>📅 Last 30 Days</span>
-            <span className="ml-8 size-10">▼</span>
+            <span className="picker-arrow">▼</span>
           </div>
           <button className="btn-primary">Create Report</button>
         </div>
@@ -71,7 +68,7 @@ export default function ReportsPage() {
           </div>
           <p className="report-label">Collection Efficiency</p>
           <div className="report-val">
-            {stats?.totalPurchase ? Math.round((stats.totalPaid / stats.totalPurchase) * 100) : 0}%
+            {stats?.totalPurchase ? Math.round(((stats.totalPaid || 0) / stats.totalPurchase) * 100) : 0}%
           </div>
         </div>
         <div className="report-card">
@@ -96,12 +93,12 @@ export default function ReportsPage() {
       <div className="dash-card mb-32 p-32">
         <div className="flex-between mb-24">
           <div>
-            <h3 className="size-18 font-800">Revenue vs Collection Trend</h3>
-            <p className="size-13 opacity-60">Tracking income versus realized payments over time</p>
+            <h3 className="chart-title">Revenue vs Collection Trend</h3>
+            <p className="chart-sub">Tracking income versus realized payments over time</p>
           </div>
-          <div className="flex-gap-sm size-12 font-600">
-            <span className="flex-gap-xs align-center"><span className="dot blue"></span> Revenue</span>
-            <span className="flex-gap-xs align-center"><span className="dot green"></span> Collection</span>
+          <div className="chart-legend">
+            <span className="legend-item"><span className="dot blue"></span> Revenue</span>
+            <span className="legend-item"><span className="dot green"></span> Collection</span>
           </div>
         </div>
         <div className="trend-chart-box">
@@ -110,7 +107,7 @@ export default function ReportsPage() {
             <path d="M0,150 Q200,50 400,120 T800,80" fill="none" stroke="var(--accent)" strokeWidth="3" strokeDasharray="5,5" className="anim-path" />
             <path d="M0,180 Q200,100 400,160 T800,120" fill="none" stroke="#10B981" strokeWidth="3" className="anim-path" />
           </svg>
-          <div className="flex-between mt-12 size-12 opacity-40 font-600">
+          <div className="chart-labels">
             <span>Week 1</span>
             <span>Week 2</span>
             <span>Week 3</span>
@@ -122,24 +119,24 @@ export default function ReportsPage() {
       <div className="grid-2-col gap-32 mb-32">
         {/* Distribution Donut */}
         <div className="dash-card p-32">
-          <h3 className="size-16 font-800 mb-24">Collection Status Distribution</h3>
-          <div className="flex-center gap-40">
+          <h3 className="donut-title">Collection Status Distribution</h3>
+          <div className="donut-content">
             <div className="donut-box">
               <div className="donut-hole">
-                <span className="size-20 font-800">₹8.4L</span>
-                <span className="size-11 opacity-60">Total</span>
+                <span className="donut-total">₹8.4L</span>
+                <span className="donut-label">Total</span>
               </div>
             </div>
-            <div className="flex-col-gap size-13 font-600">
-              <div className="flex-between w-140">
+            <div className="donut-legend">
+              <div className="legend-row">
                 <span className="flex-gap-xs align-center"><span className="dot green"></span> Paid</span>
                 <span>72%</span>
               </div>
-              <div className="flex-between w-140">
+              <div className="legend-row">
                 <span className="flex-gap-xs align-center"><span className="dot blue"></span> Pending</span>
                 <span>18%</span>
               </div>
-              <div className="flex-between w-140">
+              <div className="legend-row">
                 <span className="flex-gap-xs align-center"><span className="dot red"></span> Overdue</span>
                 <span>10%</span>
               </div>
@@ -149,16 +146,16 @@ export default function ReportsPage() {
 
         {/* Top Debtors */}
         <div className="dash-card p-32">
-          <h3 className="size-16 font-800 mb-24">Top Debtors by Ageing</h3>
+          <h3 className="debtor-title">Top Debtors by Ageing</h3>
           <div className="flex-col-gap">
             {customers.filter(c => c.balance_due > 0).slice(0, 3).map(c => (
               <div key={c.customer_id} className="mb-16">
                 <div className="flex-between mb-4">
-                  <span className="size-14 font-700">{c.name}</span>
-                  <span className="size-14 font-800">{fmt(c.balance_due)}</span>
+                  <span className="debtor-name">{c.name}</span>
+                  <span className="debtor-amount">{fmt(c.balance_due)}</span>
                 </div>
-                <div className="progress-bar-bg"><div className="progress-bar-fill fill-red" style={{ width: '85%' }} /></div>
-                <p className="size-11 mt-4 amount-red font-600">Overdue by 45 days</p>
+                <div className="progress-bar-bg"><div className="progress-bar-fill fill-red w-85" /></div>
+                <p className="debtor-status">Overdue by 45 days</p>
               </div>
             ))}
           </div>
@@ -225,13 +222,33 @@ export default function ReportsPage() {
         .report-label { font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
         .report-val { font-size: 24px; font-weight: 800; color: var(--ink); }
         .date-picker-placeholder { background: var(--white); border: 1px solid var(--border); padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; }
+        .picker-arrow { margin-left: 8px; font-size: 10px; }
         .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
         .dot.blue { background: var(--accent); }
         .dot.green { background: #10B981; }
         .dot.red { background: #EF4444; }
+        
+        .chart-title { font-size: 18px; font-weight: 800; }
+        .chart-sub { font-size: 13px; opacity: 0.6; }
+        .chart-legend { display: flex; gap: 16px; font-size: 12px; font-weight: 600; }
+        .legend-item { display: flex; align-items: center; gap: 4px; }
+        .chart-labels { display: flex; justify-content: space-between; margin-top: 12px; font-size: 12px; opacity: 0.4; font-weight: 600; }
+        
+        .donut-title { font-size: 16px; font-weight: 800; margin-bottom: 24px; }
+        .donut-content { display: flex; align-items: center; justify-content: center; gap: 40px; }
         .donut-box { width: 140px; height: 140px; border-radius: 50%; border: 15px solid #10B981; border-top-color: var(--accent); border-right-color: #EF4444; display: flex; align-items: center; justify-content: center; position: relative; }
         .donut-hole { width: 110px; height: 110px; background: #fff; border-radius: 50%; position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .w-140 { width: 140px; }
+        .donut-total { font-size: 20px; font-weight: 800; }
+        .donut-label { font-size: 11px; opacity: 0.6; }
+        .donut-legend { display: flex; flex-direction: column; gap: 12px; font-size: 13px; font-weight: 600; }
+        .legend-row { display: flex; justify-content: space-between; width: 140px; }
+        
+        .debtor-title { font-size: 16px; font-weight: 800; margin-bottom: 24px; }
+        .debtor-name { font-size: 14px; font-weight: 700; }
+        .debtor-amount { font-size: 14px; font-weight: 800; }
+        .debtor-status { font-size: 11px; margin-top: 4px; color: #EF4444; font-weight: 600; }
+        .w-85 { width: 85%; }
+
         .anim-path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: dash 3s linear forwards; }
         .history-row { opacity: 0.6; }
         .status-badge-healthy { background: #E0E7FF; color: #4F46E5; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }

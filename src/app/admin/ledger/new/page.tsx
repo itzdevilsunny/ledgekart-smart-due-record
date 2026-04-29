@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { addPurchase, getCustomers, CustomerBalance } from '@/utils/supabase';
+import { sendNotification, NotificationTemplates } from '@/utils/notifications';
 
 function NewLedgerForm() {
   const router = useRouter();
@@ -24,11 +25,11 @@ function NewLedgerForm() {
     setCustomers(data ?? []);
   }, [shop]);
 
-  useEffect(() => {
+  useEffect(() => { 
     if (shop) {
-      loadCustomers();
+      Promise.resolve().then(() => loadCustomers());
     }
-  }, [shop, loadCustomers]);
+  }, [loadCustomers, shop]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,10 +64,27 @@ function NewLedgerForm() {
         return;
       }
 
+
+      // Send notification if customer has email
+      const customer = customers.find(c => c.customer_id === customerId);
+      if (customer && customer.email) {
+        const template = NotificationTemplates.purchase(
+          shop.name || 'LedgerKart',
+          customer.name,
+          Number(amount),
+          description || 'Purchase recorded'
+        );
+        sendNotification({
+          to: customer.email,
+          subject: template.subject,
+          html: template.html
+        }).catch(e => console.error('Failed to send purchase notification:', e));
+      }
+
       router.push(`/admin/customers/${customerId}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Unexpected Error:', err);
-      setError('An unexpected error occurred. Please check your connection.');
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please check your connection.');
       setLoading(false);
     }
   };

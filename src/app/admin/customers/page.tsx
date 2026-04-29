@@ -16,6 +16,7 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<CustomerBalance[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<'all' | 'due' | 'clear'>('all');
 
   const load = useCallback(async () => {
     if (!shop) return;
@@ -28,14 +29,18 @@ export default function CustomersPage() {
     if (!authLoading && !shop) {
       router.push('/register');
     } else if (shop) {
-      load();
+      Promise.resolve().then(() => load());
     }
   }, [shop, authLoading, router, load]);
 
-  const filtered = customers.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone.includes(search)
-  );
+  const filtered = customers.filter(c => {
+    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search);
+    if (!matchesSearch) return false;
+    
+    if (filter === 'due') return c.balance_due > 0;
+    if (filter === 'clear') return c.balance_due === 0;
+    return true; // 'all'
+  });
 
   if (loading) return <div className="dash-loading"><div className="spinner" /></div>;
 
@@ -81,9 +86,9 @@ export default function CustomersPage() {
       <div className="dash-card cust-card-no-overflow">
         <div className="cust-filter-row">
           <div className="cust-tabs">
-            <button className="cust-tab active">All</button>
-            <button className="cust-tab">Due</button>
-            <button className="cust-tab">Clear</button>
+            <button className={`cust-tab ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>All</button>
+            <button className={`cust-tab ${filter === 'due' ? 'active' : ''}`} onClick={() => setFilter('due')}>Due</button>
+            <button className={`cust-tab ${filter === 'clear' ? 'active' : ''}`} onClick={() => setFilter('clear')}>Clear</button>
           </div>
           <div className="cust-flex-gap">
             <div className="cust-search-wrap">

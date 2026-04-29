@@ -11,6 +11,7 @@ export default function NewCustomerPage() {
   const { shop } = useAuth();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [creditLimit, setCreditLimit] = useState('10000');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,7 +22,7 @@ export default function NewCustomerPage() {
     setError('');
     setLoading(true);
 
-    const { data, error: err } = await createCustomer(shop.id, name, phone, Number(creditLimit));
+    const { data, error: err } = await createCustomer(shop.id, name, phone, email || null, Number(creditLimit));
 
     if (err) {
       setError(err.message);
@@ -67,6 +68,18 @@ export default function NewCustomerPage() {
               onChange={e => setPhone(e.target.value)}
               required
             />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="cust-email">Email Address</label>
+            <input
+              id="cust-email"
+              type="email"
+              placeholder="ramesh@example.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+            />
+            <span className="form-hint">Used for automated ledger notifications</span>
           </div>
 
           <div className="form-group">

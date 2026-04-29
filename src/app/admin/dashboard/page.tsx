@@ -4,40 +4,58 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { getDashboardStats, getRecentTransactions } from '@/utils/supabase';
-
-interface DashboardStats {
-  totalDue: number;
-  totalCollected: number;
-  pendingCustomers: number;
-  totalCustomers: number;
-}
+import { getDashboardStats, getRecentTransactions, DashboardStats, LedgerEntry } from '@/utils/supabase';
 
 export default function AdminDashboard() {
-  const { profile, shop } = useAuth();
+  const { profile, shop, loading: authLoading } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<(LedgerEntry & { customers: { name: string } | null })[]>([]);
 
   useEffect(() => {
-    if (shop?.id) {
-      Promise.all([
-        getDashboardStats(shop.id),
-        getRecentTransactions(shop.id)
-      ]).then(([statsRes, txnsRes]) => {
-        setStats(statsRes);
-        setTransactions(txnsRes.data || []);
-        setLoading(false);
-      });
+    if (!authLoading) {
+      if (shop?.id) {
+        Promise.all([
+          getDashboardStats(shop.id),
+          getRecentTransactions(shop.id)
+        ]).then(([statsRes, txnsRes]) => {
+          setStats(statsRes);
+          const formatted = (txnsRes.data || []).map(txn => ({
+            ...txn,
+            customers: Array.isArray(txn.customers) ? txn.customers[0] : txn.customers
+          })) as unknown as (LedgerEntry & { customers: { name: string } | null })[];
+          setTransactions(formatted);
+          setLoading(false);
+        }).catch(err => {
+          console.error("Dashboard data fetch error:", err);
+          setLoading(false);
+        });
+      } else {
+        // No shop found after auth loaded
+        Promise.resolve().then(() => setLoading(false));
+      }
     }
-  }, [shop?.id]);
+  }, [shop?.id, authLoading]);
 
-  if (loading) {
+  if (authLoading || (loading && shop?.id)) {
     return (
       <div className="dash-loading">
         <div className="spinner"></div>
-        <p>Initializing your workspace...</p>
+        <p>{authLoading ? 'Verifying access...' : 'Initializing your workspace...'}</p>
+      </div>
+    );
+  }
+
+  if (!shop?.id) {
+    return (
+      <div className="dash-page dash-max anim-1">
+        <div className="empty-state py-100">
+          <span className="empty-icon">🏪</span>
+          <h2>Welcome to LedgerKart</h2>
+          <p className="mb-20">It looks like you haven&apos;t set up your shop profile yet.</p>
+          <Link href="/admin/settings" className="btn-primary">Set Up My Shop</Link>
+        </div>
       </div>
     );
   }
@@ -52,7 +70,7 @@ export default function AdminDashboard() {
       <header className="flex-between mb-40 flex-wrap gap-20">
         <div>
           <h1 className="dash-title">Command Center</h1>
-          <p className="dash-sub">Welcome back, {profile?.full_name?.split(' ')[0] || 'Admin'}. Here is your shop's heartbeat.</p>
+          <p className="dash-sub">Welcome back, {profile?.full_name?.split(' ')[0] || 'Admin'}. Here is your shop&apos;s heartbeat.</p>
         </div>
         <div className="flex-gap-sm">
           <Link href="/admin/ledger/new" className="btn-primary">+ New Entry</Link>
@@ -158,12 +176,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <style jsx>{`
-        .insight-card { background: var(--accent); color: white; padding: 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); }
-        .insight-title { font-size: 1.125rem; font-weight: 800; margin-bottom: 4px; }
-        .insight-text { font-size: 0.875rem; opacity: 0.8; }
-        .qa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 24px; }
-      `}</style>
+
     </div>
   );
 }

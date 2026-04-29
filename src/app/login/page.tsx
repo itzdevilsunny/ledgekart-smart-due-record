@@ -122,8 +122,8 @@ function LoginForm() {
 
           <div className="form-group">
             <div className="flex justify-between items-center mb-4">
-              <label htmlFor="login-password" style={{ marginBottom: 0 }}>Password</label>
-              <Link href="/forgot-password" style={{ fontSize: '0.875rem', color: 'var(--accent)' }}>Forgot Password?</Link>
+              <label htmlFor="login-password">Password</label>
+              <Link href="/forgot-password" title="reset password" id="forgot-password-link">Forgot Password?</Link>
             </div>
             <input
               id="login-password"
@@ -142,12 +142,20 @@ function LoginForm() {
               : `Sign In as ${isAdmin ? 'Admin' : 'Customer'} →`}
           </button>
 
+          <div className="auth-divider"><span>or</span></div>
+
+          <Link 
+            href="/forgot-password" 
+            className="btn-outline btn-full-center flex-center gap-8"
+          >
+            📧 Sign in with OTP
+          </Link>
+
           <button 
             type="button" 
             onClick={handleDemoLogin} 
-            className="btn-outline btn-full mt-12" 
+            className="btn-demo-access btn-full mt-12" 
             disabled={loading}
-            style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
           >
             ✨ One-Click Demo Access
           </button>
@@ -173,9 +181,33 @@ function LoginForm() {
           )}
         </p>
 
-        <div className="auth-divider"><span>or</span></div>
-        <Link href="/" className="btn-ghost btn-full-center">← Back to Home</Link>
+        <Link href="/" className="btn-ghost btn-full-center mt-24">← Back to Home</Link>
       </div>
+
+      <style jsx>{`
+        #forgot-password-link {
+          font-size: 0.875rem;
+          color: var(--accent);
+        }
+        .btn-demo-access {
+          background: transparent;
+          border: 1px solid var(--accent);
+          color: var(--accent);
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .btn-demo-access:hover {
+          background: rgba(99, 102, 241, 0.1);
+        }
+        .mt-12 { margin-top: 12px; }
+        .flex { display: flex; }
+        .justify-between { justify-content: space-between; }
+        .items-center { align-items: center; }
+        .mb-4 { margin-bottom: 4px; }
+      `}</style>
     </div>
   );
 }

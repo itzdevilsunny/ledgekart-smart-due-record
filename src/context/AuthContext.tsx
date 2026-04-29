@@ -21,10 +21,16 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 /** Resolves in max `ms` ms — avoids infinite hangs when DB tables don't exist */
-function withTimeout<T>(promise: Promise<T>, ms = 4000): Promise<T | null> {
+function withTimeout<T>(promise: Promise<T>, ms = 10000): Promise<T | null> {
   return Promise.race([
-    promise.catch(() => null),
-    new Promise<null>(res => setTimeout(() => res(null), ms)),
+    promise.catch((err) => {
+      console.error('withTimeout caught error:', err);
+      return null;
+    }),
+    new Promise<null>(res => setTimeout(() => {
+      console.warn(`withTimeout reached ${ms}ms limit`);
+      res(null);
+    }, ms)),
   ]);
 }
 
@@ -54,7 +60,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Initial session check with timeout
-    withTimeout(supabase.auth.getSession(), 3000).then(async (result) => {
+    withTimeout(supabase.auth.getSession(), 8000).then(async (result) => {
+      if (!result) {
+        console.warn('Initial getSession returned null or timed out');
+      }
       const session = result?.data?.session ?? null;
       setSession(session);
       setUser(session?.user ?? null);

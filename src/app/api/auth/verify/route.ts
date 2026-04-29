@@ -33,39 +33,43 @@ export async function POST(req: Request) {
     if (listError) throw listError;
     
     const user = users.find(u => u.email === email);
-    const role = user?.user_metadata?.role || 'admin';
+    let role = user?.user_metadata?.role;
+
+    // If role not in metadata, check if they exist in customers table
+    if (!role) {
+      const { data: customerRow } = await supabaseAdmin
+        .from('customers')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+      
+      role = customerRow ? 'customer' : 'admin';
+    }
+
     const redirectPath = role === 'customer' ? '/customer/portal' : '/admin/dashboard';
     
     // 4. Generate magic link with correct redirect
-    // We append the redirect_to parameter to ensure they land in the right portal
+    const host = req.headers.get('host');
+    const protocol = host?.includes('localhost') ? 'http' : 'https';
+    const baseUrl = host ? `${protocol}://${host}` : (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000');
+    const redirectTo = `${baseUrl}/auth/callback?redirect_to=${encodeURIComponent(redirectPath)}`;
+
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email: email,
+      options: { redirectTo }
     });
 
     if (linkError) throw linkError;
 
-    // Supabase generateLink returns a link that defaults to site_url. 
-    // We'll manually append the redirect_to to the action_link if needed, 
-    // or just return the path for the frontend to handle if it prefers.
-    
-    // Most reliable: return the success and let the frontend do the final push 
-    // after the magic link session is established. 
-    // But action_link is meant to be clicked/visited.
-    
-    let finalLink = linkData.properties.action_link;
-    if (finalLink && !finalLink.includes('redirect_to')) {
-      const separator = finalLink.includes('?') ? '&' : '?';
-      finalLink += `${separator}redirect_to=${encodeURIComponent(redirectPath)}`;
-    }
-
     return NextResponse.json({ 
       success: true, 
-      redirectUrl: finalLink 
+      redirectUrl: linkData.properties.action_link 
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('OTP Verify Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -82,7 +82,7 @@ export default function RegisterPage() {
     setErrorHint('');
     setLoading(true);
 
-    const { error: shopError } = await createShop(userId, shopName, shopAddress, shopPhone);
+    const { error: shopError } = await createShop(userId, { name: shopName, address: shopAddress, phone: shopPhone });
 
     if (shopError) {
       const { msg, hint } = getErrorMessage(shopError.message);

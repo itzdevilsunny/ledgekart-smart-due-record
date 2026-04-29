@@ -21,7 +21,7 @@ export default function NewProductPage() {
     setError('');
     setLoading(true);
 
-    const { data, error: err } = await createProduct(shop.id, name, Number(price), unit);
+    const { error: err } = await createProduct(shop.id, name, Number(price), unit);
 
     if (err) {
       setError(err.message);
@@ -40,7 +40,7 @@ export default function NewProductPage() {
         <p className="dash-sub">Enter the product details below to add it to your inventory.</p>
       </div>
 
-      <div className="form-card" style={{ maxWidth: '600px' }}>
+      <div className="form-card max-600">
         <form onSubmit={handleSubmit} className="auth-form">
           {error && <div className="auth-error">{error}</div>}
 
@@ -76,8 +76,7 @@ export default function NewProductPage() {
                 value={unit}
                 onChange={e => setUnit(e.target.value)}
                 required
-                className="cust-search-input"
-                style={{ height: '46px' }}
+                className="cust-search-input h-46"
               >
                 <option value="kg">kilogram (kg)</option>
                 <option value="gram">gram (g)</option>
@@ -97,12 +96,7 @@ export default function NewProductPage() {
           </div>
         </form>
       </div>
-      
-      <style jsx>{`
-        .grid-2-col { display: grid; grid-template-columns: 1fr 1fr; }
-        select { background: #F9FAFB; border: 1px solid var(--border); border-radius: 12px; padding: 0 16px; width: 100%; outline: none; transition: all 0.2s; }
-        select:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
-      `}</style>
+
     </div>
   );
 }
