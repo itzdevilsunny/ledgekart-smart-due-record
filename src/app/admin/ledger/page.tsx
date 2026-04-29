@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { getRecentTransactions, getCustomers, CustomerBalance, LedgerEntry } from '@/utils/supabase';
 
@@ -13,7 +13,9 @@ type TxnWithCustomer = LedgerEntry & {
 export default function LedgerPage() {
   const { shop, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [view, setView] = useState<'due' | 'history'>('due');
+  const searchParams = useSearchParams();
+  const filter = searchParams.get('filter');
+  const [view, setView] = useState<'due' | 'history'>(filter === 'overdue' ? 'due' : 'due');
   const [entries, setEntries] = useState<TxnWithCustomer[]>([]);
   const [customers, setCustomers] = useState<CustomerBalance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,9 +27,8 @@ export default function LedgerPage() {
     
     if (view === 'history') {
       const { data } = await getRecentTransactions(shop.id, 100);
-      const formatted = ((data as any) ?? []).map((txn: any) => ({
+      const formatted = (data as any[] || []).map((txn: any) => ({
         ...txn,
-        // Supabase sometimes returns an array for single joins depending on query
         customers: Array.isArray(txn.customers) ? txn.customers[0] : txn.customers
       }));
       setEntries(formatted as TxnWithCustomer[]);
@@ -44,7 +45,8 @@ export default function LedgerPage() {
     if (!authLoading && !shop) {
       router.push('/register');
     } else if (shop && isMounted) {
-      loadData();
+      // Defer loading to avoid synchronous setState inside effect
+      Promise.resolve().then(() => loadData());
     }
     return () => { isMounted = false; };
   }, [shop, authLoading, router, loadData]);
@@ -52,9 +54,19 @@ export default function LedgerPage() {
   const fmt = (val: number) => 
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
 
-  const filteredCustomers = customers.filter(c => 
-    c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search)
-  );
+  const filteredCustomers = customers.filter(c => {
+    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search);
+    if (filter === 'overdue') {
+      return matchesSearch && c.balance_due > 0;
+    }
+    return matchesSearch;
+  });
+
+  const handleRemind = (customer: CustomerBalance) => {
+    const message = `Hello ${customer.name}, this is a friendly reminder from ${shop?.name || 'LedgerKart'} regarding your outstanding balance of ₹${customer.balance_due}. Please clear it at your earliest convenience. Thank you!`;
+    const phone = customer.phone.replace(/[^0-9]/g, '');
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
 
   const filteredEntries = entries.filter(e => 
     e.customers?.name.toLowerCase().includes(search.toLowerCase()) || e.description?.toLowerCase().includes(search.toLowerCase())
@@ -130,7 +142,10 @@ export default function LedgerPage() {
                           <span className="usage-limit">Limit: {fmt(c.credit_limit)}</span>
                         </div>
                         <div className="progress-bar-bg">
-                          <div className={`progress-bar-fill ${barColor}`} style={{ width: usagePercent + '%' } as any} />
+                          <div 
+                            className={`progress-bar-fill ${barColor}`} 
+                            style={{ width: `${usagePercent}%` } as React.CSSProperties} 
+                          />
                         </div>
                       </td>
                       <td>
@@ -141,7 +156,15 @@ export default function LedgerPage() {
                         )}
                       </td>
                       <td>
-                        <button className="btn-outline py-4 px-12 size-12">Remind</button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemind(c);
+                          }}
+                          className="btn-outline py-4 px-12 size-12"
+                        >
+                          Remind
+                        </button>
                       </td>
                     </tr>
                   );

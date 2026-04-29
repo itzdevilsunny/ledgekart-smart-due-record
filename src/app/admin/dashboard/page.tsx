@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { getDashboardStats, getRecentTransactions } from '@/utils/supabase';
 
@@ -14,6 +15,7 @@ interface DashboardStats {
 
 export default function AdminDashboard() {
   const { profile, shop } = useAuth();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -130,7 +132,12 @@ export default function AdminDashboard() {
           <div className="stat-card insight-card">
             <h3 className="insight-title">Pro Insight</h3>
             <p className="insight-text">You have {stats?.pendingCustomers || 0} customers with overdue balances. Consider sending WhatsApp reminders today.</p>
-            <button className="cust-banner-btn w-full mt-20">Send Batch Reminders</button>
+            <button 
+              onClick={() => router.push('/admin/ledger?filter=overdue')}
+              className="cust-banner-btn w-full mt-20"
+            >
+              Send Batch Reminders
+            </button>
           </div>
           
           <div className="dash-section">
