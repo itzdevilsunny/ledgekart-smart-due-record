@@ -25,8 +25,9 @@ export default function LedgerPage() {
     
     if (view === 'history') {
       const { data } = await getRecentTransactions(shop.id, 100);
-      const formatted = (data as any[] ?? []).map(txn => ({
+      const formatted = ((data as any) ?? []).map((txn: any) => ({
         ...txn,
+        // Supabase sometimes returns an array for single joins depending on query
         customers: Array.isArray(txn.customers) ? txn.customers[0] : txn.customers
       }));
       setEntries(formatted as TxnWithCustomer[]);
@@ -39,11 +40,13 @@ export default function LedgerPage() {
   }, [shop, view]);
 
   useEffect(() => {
+    let isMounted = true;
     if (!authLoading && !shop) {
       router.push('/register');
-    } else if (shop) {
+    } else if (shop && isMounted) {
       loadData();
     }
+    return () => { isMounted = false; };
   }, [shop, authLoading, router, loadData]);
 
   const fmt = (val: number) => 
@@ -127,7 +130,7 @@ export default function LedgerPage() {
                           <span className="usage-limit">Limit: {fmt(c.credit_limit)}</span>
                         </div>
                         <div className="progress-bar-bg">
-                          <div className={`progress-bar-fill ${barColor}`} style={{ width: `${usagePercent}%` }} />
+                          <div className={`progress-bar-fill ${barColor}`} style={{ width: usagePercent + '%' } as any} />
                         </div>
                       </td>
                       <td>
@@ -188,10 +191,6 @@ export default function LedgerPage() {
         .usage-info { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
         .usage-limit { opacity: 0.6; }
       `}</style>
-    </div>
-  );
-}
-
     </div>
   );
 }
