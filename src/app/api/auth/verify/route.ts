@@ -28,12 +28,16 @@ export async function POST(req: Request) {
     // 2. OTP is valid! Cleanup codes for this email
     await supabaseAdmin.from('otps').delete().eq('email', email);
 
-    // 3. Since we verified the user, we can now generate a temporary reset link 
-    // or simply return success so the frontend can allow password update.
-    // However, to actually UPDATE the password in Supabase Auth, 
-    // the user needs to be authenticated.
+    // 3. Find user and their role to determine redirect path
+    const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    if (listError) throw listError;
     
-    // We'll create a magic link that logs them in directly so they can update their password.
+    const user = users.find(u => u.email === email);
+    const role = user?.user_metadata?.role || 'admin';
+    const redirectPath = role === 'customer' ? '/customer/portal' : '/admin/dashboard';
+    
+    // 4. Generate magic link with correct redirect
+    // We append the redirect_to parameter to ensure they land in the right portal
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email: email,
@@ -41,9 +45,23 @@ export async function POST(req: Request) {
 
     if (linkError) throw linkError;
 
+    // Supabase generateLink returns a link that defaults to site_url. 
+    // We'll manually append the redirect_to to the action_link if needed, 
+    // or just return the path for the frontend to handle if it prefers.
+    
+    // Most reliable: return the success and let the frontend do the final push 
+    // after the magic link session is established. 
+    // But action_link is meant to be clicked/visited.
+    
+    let finalLink = linkData.properties.action_link;
+    if (finalLink && !finalLink.includes('redirect_to')) {
+      const separator = finalLink.includes('?') ? '&' : '?';
+      finalLink += `${separator}redirect_to=${encodeURIComponent(redirectPath)}`;
+    }
+
     return NextResponse.json({ 
       success: true, 
-      redirectUrl: linkData.properties.action_link 
+      redirectUrl: finalLink 
     });
 
   } catch (error: any) {
