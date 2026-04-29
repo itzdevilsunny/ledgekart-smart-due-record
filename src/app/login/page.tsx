@@ -39,6 +39,13 @@ function LoginForm() {
   const handleDemoLogin = async () => {
     setError('');
     setLoading(true);
+    
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('placeholder')) {
+      setError('System is still using placeholder keys. Please add real Supabase keys to Vercel Settings.');
+      setLoading(false);
+      return;
+    }
+
     const demoEmail = isAdmin ? 'admin@demo.com' : 'customer@demo.com';
     const demoPass = 'demo1234';
 
@@ -56,7 +63,15 @@ function LoginForm() {
       );
 
       if (signUpError) {
-        setError('Demo account creation failed. Please try manual signup.');
+        setError(`Demo setup failed: ${signUpError.message}. (Tip: Disable "Email Confirmation" in Supabase Dashboard)`);
+        setLoading(false);
+        return;
+      }
+      
+      // After signup, sign in again
+      const { error: finalError } = await signIn(demoEmail, demoPass);
+      if (finalError) {
+        setError(`Sign in failed after signup: ${finalError.message}`);
         setLoading(false);
         return;
       }
