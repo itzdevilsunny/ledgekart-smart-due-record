@@ -121,7 +121,10 @@ function LoginForm() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="login-password">Password</label>
+            <div className="flex justify-between items-center mb-4">
+              <label htmlFor="login-password" style={{ marginBottom: 0 }}>Password</label>
+              <Link href="/forgot-password" style={{ fontSize: '0.875rem', color: 'var(--accent)' }}>Forgot Password?</Link>
+            </div>
             <input
               id="login-password"
               type="password"
