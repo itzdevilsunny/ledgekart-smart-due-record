@@ -78,13 +78,13 @@ export default function LedgerPage() {
       </div>
 
       <div className="dash-card mb-32">
-        <div className="flex-between flex-wrap gap-12 p-12">
+        <div className="ledger-controls">
           <div className="cust-tabs">
             <button className={`cust-tab ${view === 'due' ? 'active' : ''}`} onClick={() => setView('due')}>Due Ledger</button>
             <button className={`cust-tab ${view === 'history' ? 'active' : ''}`} onClick={() => setView('history')}>History</button>
           </div>
-          <div className="flex-gap-sm" style={{ flex: 1, justifyContent: 'flex-end' }}>
-            <div className="cust-search-wrap" style={{ maxWidth: '300px', flex: 1 }}>
+          <div className="ledger-search-box">
+            <div className="cust-search-wrap full-width">
               <input 
                 type="text" 
                 placeholder="Search..." 
@@ -121,10 +121,10 @@ export default function LedgerPage() {
                         <div className="cust-table-cell-muted">{c.phone}</div>
                       </td>
                       <td className="cust-table-cell-due font-700">{fmt(c.balance_due)}</td>
-                      <td style={{ minWidth: '150px' }}>
-                        <div className="flex-between size-11 mb-4">
+                      <td className="usage-cell">
+                        <div className="usage-info">
                           <span>{usagePercent}% Used</span>
-                          <span className="opacity-60">Limit: {fmt(c.credit_limit)}</span>
+                          <span className="usage-limit">Limit: {fmt(c.credit_limit)}</span>
                         </div>
                         <div className="progress-bar-bg">
                           <div className={`progress-bar-fill ${barColor}`} style={{ width: `${usagePercent}%` }} />
@@ -179,6 +179,18 @@ export default function LedgerPage() {
           )}
         </div>
       </div>
+
+      <style jsx>{`
+        .ledger-controls { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px; }
+        .ledger-search-box { flex: 1; display: flex; justify-content: flex-end; }
+        .full-width { max-width: 300px; flex: 1; }
+        .usage-cell { min-width: 150px; }
+        .usage-info { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+        .usage-limit { opacity: 0.6; }
+      `}</style>
+    </div>
+  );
+}
 
     </div>
   );

@@ -50,8 +50,8 @@ export default function ProductsPage() {
       </div>
 
       <div className="dash-card mb-32">
-        <div className="flex-between flex-wrap gap-12 p-12">
-          <div className="cust-search-wrap" style={{ flex: 1, minWidth: '300px' }}>
+        <div className="search-bar-container">
+          <div className="cust-search-wrap search-box">
             <input 
               type="text" 
               placeholder="Search products..." 
@@ -79,8 +79,7 @@ export default function ProductsPage() {
           {filtered.map(p => (
             <div key={p.id} className="prod-card">
               <div className="prod-img-box">
-                {/* Fallback emoji as image for now */}
-                <span style={{ fontSize: '64px' }}>📦</span>
+                <span className="prod-placeholder-icon">📦</span>
                 <span className="prod-badge badge-instock">In Stock</span>
               </div>
               <div className="prod-info">
@@ -101,6 +100,11 @@ export default function ProductsPage() {
         </div>
       )}
 
+      <style jsx>{`
+        .search-bar-container { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px; }
+        .search-box { flex: 1; min-width: 300px; }
+        .prod-placeholder-icon { font-size: 64px; }
+      `}</style>
     </div>
   );
 }

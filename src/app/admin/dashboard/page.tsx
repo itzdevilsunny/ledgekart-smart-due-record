@@ -5,10 +5,17 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { getDashboardStats, getRecentTransactions } from '@/utils/supabase';
 
+interface DashboardStats {
+  totalDue: number;
+  totalCollected: number;
+  pendingCustomers: number;
+  totalCustomers: number;
+}
+
 export default function AdminDashboard() {
   const { profile, shop } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
 
   useEffect(() => {
@@ -56,7 +63,7 @@ export default function AdminDashboard() {
         <div className="stat-card stat-blue">
           <div className="stat-icon">💰</div>
           <p className="stat-label">Total Revenue</p>
-          <div className="stat-val">{fmt(stats?.totalPurchase || 0)}</div>
+          <div className="stat-val">{fmt((stats?.totalCollected || 0) + (stats?.totalDue || 0))}</div>
           <p className="stat-hint">Lifetime transactions</p>
         </div>
         <div className="stat-card stat-red">
@@ -69,7 +76,7 @@ export default function AdminDashboard() {
           <div className="stat-icon">✅</div>
           <p className="stat-label">Collection Rate</p>
           <div className="stat-val">
-            {stats?.totalPurchase ? Math.round((stats.totalPaid / stats.totalPurchase) * 100) : 0}%
+            {stats?.totalCollected ? Math.round((stats.totalCollected / ((stats.totalCollected || 0) + (stats.totalDue || 0))) * 100) : 0}%
           </div>
           <p className="stat-hint">Payment efficiency</p>
         </div>
@@ -120,9 +127,9 @@ export default function AdminDashboard() {
 
         {/* Quick Links / Sidebar Widget */}
         <div className="flex-col-gap">
-          <div className="stat-card bg-indigo text-white radius-16 shadow-sm border-light p-24">
-            <h3 className="size-18 font-800 mb-4">Pro Insight</h3>
-            <p className="size-14 opacity-80">You have {stats?.pendingCustomers || 0} customers with overdue balances. Consider sending WhatsApp reminders today.</p>
+          <div className="stat-card insight-card">
+            <h3 className="insight-title">Pro Insight</h3>
+            <p className="insight-text">You have {stats?.pendingCustomers || 0} customers with overdue balances. Consider sending WhatsApp reminders today.</p>
             <button className="cust-banner-btn w-full mt-20">Send Batch Reminders</button>
           </div>
           
@@ -130,7 +137,7 @@ export default function AdminDashboard() {
             <div className="dash-section-header">
               <h2>Quick Actions</h2>
             </div>
-            <div className="p-24 grid-2-col gap-12">
+            <div className="qa-grid">
               <Link href="/admin/products" className="qa-btn">
                 <span>📦</span>
                 Products
@@ -145,9 +152,10 @@ export default function AdminDashboard() {
       </div>
 
       <style jsx>{`
-        .grid-2-col { display: grid; grid-template-columns: 1fr 1fr; }
-        .bg-indigo { background: var(--accent); }
-        .opacity-80 { opacity: 0.8; }
+        .insight-card { background: var(--accent); color: white; padding: 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); }
+        .insight-title { font-size: 1.125rem; font-weight: 800; margin-bottom: 4px; }
+        .insight-text { font-size: 0.875rem; opacity: 0.8; }
+        .qa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 24px; }
       `}</style>
     </div>
   );

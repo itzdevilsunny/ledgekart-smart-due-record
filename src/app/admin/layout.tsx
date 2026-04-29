@@ -30,7 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <header className="admin-header">
         <div className="header-inner">
           <div className="header-left">
-            <Link href="/" className="header-logo" style={{ cursor: 'pointer', zIndex: 1001 }}>
+            <Link href="/" className="header-logo main-logo-link">
               <div className="logo-icon-sm">L</div>
               <span className="hide-mobile">LedgerKart</span>
             </Link>
@@ -65,13 +65,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </header>
 
-      <div className="nav-floating-dock" style={{ zIndex: 9999 }}>
+      <div className="nav-floating-dock dock-elevated">
         <button className="btn-3d" onClick={() => router.back()} title="Go Back">←</button>
         <button className="btn-3d" onClick={() => router.forward()} title="Go Forward">→</button>
-        <Link href="/admin/dashboard" className="btn-3d btn-3d-home" title="Dashboard Home" style={{ textDecoration: 'none' }}>
+        <Link href="/admin/dashboard" className="btn-3d btn-3d-home home-dock-link" title="Dashboard Home">
           <span>🏠</span>
         </Link>
       </div>
+
+      <style jsx>{`
+        .main-logo-link { cursor: pointer; z-index: 1001; }
+        .dock-elevated { z-index: 9999; }
+        .home-dock-link { text-decoration: none; }
+      `}</style>
 
       <main className="admin-content">
         <div className="content-inner">

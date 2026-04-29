@@ -198,13 +198,13 @@ export default function ReportsPage() {
                 <td className="amount-green font-700">+8.4%</td>
                 <td><span className="cust-badge-clear">EXCELLENT</span></td>
               </tr>
-              <tr className="opacity-60">
+              <tr className="history-row">
                 <td>March 2026</td>
                 <td>₹11,10,000</td>
                 <td>₹9,40,000</td>
                 <td>₹1,70,000</td>
                 <td className="amount-green">+12.1%</td>
-                <td><span className="badge-paid" style={{ background: '#E0E7FF', color: '#4F46E5' }}>HEALTHY</span></td>
+                <td><span className="status-badge-healthy">HEALTHY</span></td>
               </tr>
             </tbody>
           </table>
@@ -233,6 +233,8 @@ export default function ReportsPage() {
         .donut-hole { width: 110px; height: 110px; background: #fff; border-radius: 50%; position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .w-140 { width: 140px; }
         .anim-path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: dash 3s linear forwards; }
+        .history-row { opacity: 0.6; }
+        .status-badge-healthy { background: #E0E7FF; color: #4F46E5; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
         @keyframes dash { to { stroke-dashoffset: 0; } }
       `}</style>
     </div>
